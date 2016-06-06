@@ -1,0 +1,9 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="seekbar" parent="android:Theme.Holo">
+
+
+
+    </style>
+
+</resources>
