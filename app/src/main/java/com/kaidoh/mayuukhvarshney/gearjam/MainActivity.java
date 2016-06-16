@@ -85,8 +85,9 @@ protected File folder;
         mArtistTitile=(TextView) findViewById(R.id.artist_name);
         Sc_icon=(ImageView)findViewById(R.id.soundcloud_icon);
         MusicPlayer= (RelativeLayout) findViewById(R.id.music_player);
-        // mSelectedTrackImage.setImageResource(R.mipmap.waiting_image);
         Sc_icon.setImageResource(R.drawable.logo_sc_white);
+
+        MusicPlayer.setVisibility(View.GONE);
 
 
         mPlayerControl.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +105,7 @@ protected File folder;
         public void onReceive(Context context, Intent intent) {
             int index;
             boolean isplaying;
+            MusicPlayer.setVisibility(View.VISIBLE);
             String title="",art="",username="";
             Bundle extras=intent.getExtras();
             index=extras.getInt("SongIndex");
@@ -276,10 +278,8 @@ protected File folder;
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        else if(id== R.id.playlist_item){
+
+        if(id== R.id.playlist_item){
             PlayListFragment fragobj=new PlayListFragment();
             FragmentTransaction ft=getSupportFragmentManager().beginTransaction();
             ft.replace(R.id.FragmentContainer, fragobj);
@@ -287,6 +287,9 @@ protected File folder;
             ft.commit();
 
         }
+
+
+
 
         return super.onOptionsItemSelected(item);
     }

@@ -58,7 +58,11 @@ protected File home;
         main = (RecyclerView) view.findViewById(R.id.tracklayout_list);
         main.setVisibility(View.INVISIBLE);
         progress.setVisibility(View.VISIBLE);
-        if (home.listFiles() == null) {
+        progress.spin();
+        File[] contents = home.listFiles();
+        Log.d("PlayList","the contents "+contents.toString());
+
+         if(home.list().length<=0){
             main.setVisibility(View.VISIBLE);
             progress.stopSpinning();
             progress.setVisibility(View.INVISIBLE);
@@ -66,6 +70,9 @@ protected File home;
         }
 
         else{
+             if(home.list().length>0){
+                 Log.d("PlayList","folder has greater length.");
+             }
 
             new RetriveFromFolder(trackService){
                 @Override
@@ -156,6 +163,19 @@ protected File home;
                     }
 
 
+                }
+                else
+                {
+                    Log.d("PlayList"," Inside background task.. else ");
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            main.setVisibility(View.VISIBLE);
+                            progress.stopSpinning();
+                            progress.setVisibility(View.INVISIBLE);
+                            Toast.makeText(getActivity(), "No Songs in PlayList :(", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
 

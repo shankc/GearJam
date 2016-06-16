@@ -3,7 +3,10 @@ package com.kaidoh.mayuukhvarshney.gearjam;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
@@ -42,14 +45,19 @@ public class MusicService extends Service {
     private static final int BUFFER_SEGMENT_COUNT = 256;
     public boolean pause;
     public boolean inPlayList;
-
+    MediaCodecAudioTrackRenderer  audioRenderer;
+    private int focus;
+    AudioManager am;
     public void onCreate(){
         super.onCreate();
         intent = new Intent();
         songPosn=0;
         exoPlayer=ExoPlayer.Factory.newInstance(1);
+         am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        focus= am.requestAudioFocus(focusChangeListener,
 
-
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
         exoPlayer.addListener(new ExoPlayer.Listener() {
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
@@ -59,19 +67,17 @@ public class MusicService extends Service {
                     playNext();
 
                 } else {
-                    if (exoPlayer.getPlaybackState() == exoPlayer.STATE_READY) {
+
+                    if (exoPlayer.getPlaybackState() == exoPlayer.STATE_READY && focus==AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                         PrepStage = true;
 
-                        //sendMessage();
                         String songTitle;
-                        //Track theTitle = songs.get(getSongIndex());
-                        if(inPlayList){
-                            songTitle=PlayListsongs.get(getSongIndex()).getTitle();
+
+                        if (inPlayList) {
+                            songTitle = PlayListsongs.get(getSongIndex()).getTitle();
                             send(PlayListsongs);
-                        }
-                        else
-                        {
-                            songTitle=songs.get(getSongIndex()).getTitle();
+                        } else {
+                            songTitle = songs.get(getSongIndex()).getTitle();
                             send(songs);
                         }
                         //String songTitle = theTitle.getTitle();
@@ -126,31 +132,30 @@ public class MusicService extends Service {
 
         return START_NOT_STICKY;
     }
-    public void initExoPlayer(){
-        String url="";
-        if(inPlayList) {
-            Track theSong = PlayListsongs.get(songPosn);
-          // url = theSong.getStreamURL() + "?client_id=" + Config.CLIENT_ID; // till this statement can be an if statement.
-           url=PlayListIDs.get(theSong.getID());
+    public void initExoPlayer() {
 
-            Log.d("MusicSevice"," get the path of the song "+url+" "+PlayListIDs.get(theSong.getID()));
-        }
-        else
-        {
-            Track theSong=songs.get(songPosn);
-            url = theSong.getStreamURL() + "?client_id=" + Config.CLIENT_ID;
+        if (focus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            String url = "";
+            if (inPlayList) {
+                Track theSong = PlayListsongs.get(songPosn);
+                url = PlayListIDs.get(theSong.getID());
+                Log.d("musicService","get song path"+url);
 
-        }
+            } else {
+                Track theSong = songs.get(songPosn);
+                url = theSong.getStreamURL() + "?client_id=" + Config.CLIENT_ID;
+            }
             Uri radioUri = Uri.parse(url);
 // Settings for exoPlayer
-        Allocator allocator = new DefaultAllocator(BUFFER_SEGMENT_SIZE);
-        String userAgent = Util.getUserAgent(this, "ExoPlayerDemo");
-        DefaultUriDataSource dataSource = new DefaultUriDataSource(this, null, userAgent);
-        ExtractorSampleSource sampleSource = new ExtractorSampleSource(
-                radioUri, dataSource, allocator, BUFFER_SEGMENT_SIZE * BUFFER_SEGMENT_COUNT);
-        MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource, MediaCodecSelector.DEFAULT);
+            Allocator allocator = new DefaultAllocator(BUFFER_SEGMENT_SIZE);
+            String userAgent = Util.getUserAgent(this, "ExoPlayerDemo");
+            DefaultUriDataSource dataSource = new DefaultUriDataSource(this, null, userAgent);
+            ExtractorSampleSource sampleSource = new ExtractorSampleSource(
+                    radioUri, dataSource, allocator, BUFFER_SEGMENT_SIZE * BUFFER_SEGMENT_COUNT);
+            MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource, MediaCodecSelector.DEFAULT);
 // Prepare ExoPlayer
-        exoPlayer.prepare(audioRenderer);
+            exoPlayer.prepare(audioRenderer);
+        }
     }
     public void setList(List<Track> theSongs){
         this.songs=theSongs;
@@ -167,6 +172,44 @@ public class MusicService extends Service {
             return MusicService.this;
         }
     }
+    private AudioManager.OnAudioFocusChangeListener focusChangeListener =
+            new AudioManager.OnAudioFocusChangeListener() {
+                public void onAudioFocusChange(int focusChange) {
+                    AudioManager am =(AudioManager)getSystemService(Context.AUDIO_SERVICE);
+                    switch (focusChange) {
+
+                        case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) :
+                            // Lower the volume while ducking.
+                            exoPlayer.sendMessage(audioRenderer,MediaCodecAudioTrackRenderer.MSG_SET_VOLUME,0.2f);
+                            Log.d("MusicService", "audiofocus loss transient can duck");
+                            break;
+                        case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) :
+                            exoPlayer.setPlayWhenReady(false);
+                            Log.d("MusicService", "audiofocus loss transient");
+                            break;
+
+                        case (AudioManager.AUDIOFOCUS_LOSS) :
+                            //exoPlayer.stop();
+                           // exoPlayer.seekTo(0);
+                            exoPlayer.setPlayWhenReady(false);
+                            am.abandonAudioFocus(focusChangeListener);
+                            ComponentName component =new ComponentName(MusicService.this,MainActivity.class);
+                            am.unregisterMediaButtonEventReceiver(component);
+                            Log.d("MusicService", "audiofocus loss");
+                            // send message to mainactivity change the play/pause icon!!
+                            break;
+
+                        case (AudioManager.AUDIOFOCUS_GAIN) :
+
+                            exoPlayer.sendMessage(audioRenderer,MediaCodecAudioTrackRenderer.MSG_SET_VOLUME,1f);
+
+                            Log.d("MusicService","audiofocus gain");
+                            exoPlayer.setPlayWhenReady(true);
+                            break;
+                        default: break;
+                    }
+                }
+            };
     @Override
     public IBinder onBind(Intent intent) {
         return musicBind;
@@ -221,7 +264,12 @@ public class MusicService extends Service {
         return exoPlayer.getPlayWhenReady();
     }
     public void go(){
-        exoPlayer.setPlayWhenReady(true);
+        am = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        focus= am.requestAudioFocus(focusChangeListener, AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
+        if(focus==AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            exoPlayer.setPlayWhenReady(true);
+        }
     }
     public void pausePlayer(){
         exoPlayer.setPlayWhenReady(false);
@@ -266,6 +314,7 @@ public class MusicService extends Service {
     public void onDestroy() {
         stopForeground(true);
     }
+
 
 }
 

@@ -5,9 +5,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -25,11 +27,14 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
         public TextView TrackTitle;
         public ImageView TrackImage;
         private View mView;
-
+        private CheckBox box;
         public MyViewHolder(View view) {
             super(view);
             TrackTitle=(TextView)view.findViewById(R.id.track_title);
             TrackImage=(ImageView)view.findViewById(R.id.track_image);
+            if(isPlayList){
+             box = (CheckBox) view.findViewById(R.id.cbBox);
+            }
             mView=view;
 
         }
@@ -46,9 +51,16 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.track_list_row, parent, false);
 
+        View itemView;
+        if (isPlayList) {
+            itemView = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.playlist_track_row, parent, false);
+        }
+        else {
+            itemView = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.track_list_row, parent, false);
+        }
         return new MyViewHolder(itemView);
     }
 
@@ -98,6 +110,7 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
 
 
                 }
+
 
              return true;
             }

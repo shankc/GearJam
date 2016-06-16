@@ -124,7 +124,9 @@ return view;
 
          @Override
          public void failure(RetrofitError error) {
-
+             main.setVisibility(View.VISIBLE);
+             progress.stopSpinning();
+             progress.setVisibility(View.INVISIBLE);
              Toast.makeText(getActivity(), "There was an Error :(", Toast.LENGTH_SHORT).show();
              error.printStackTrace();
 
