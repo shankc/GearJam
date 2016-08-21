@@ -85,7 +85,8 @@ public class MainMenuFragment extends Fragment {
             @Override
             public void onGlobalLayout() {
                 if (imageAdapter.getNumColumns() == 0) {
-                    final int numColumns = (int) Math.floor(photoGrid.getWidth() / (mPhotoSize + mPhotoSpacing));
+                    final int numColumns = (int) Math.floor(photoGrid.getWidth()/(mPhotoSize+mPhotoSpacing));
+
                     if (numColumns > 0) {
                         final int columnWidth = (photoGrid.getWidth() / numColumns);
                         imageAdapter.setNumColumns(numColumns);

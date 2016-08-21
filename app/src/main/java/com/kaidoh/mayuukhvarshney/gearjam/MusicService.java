@@ -34,6 +34,7 @@ public class MusicService extends Service {
     private final IBinder musicBind = new MusicBinder();
     private List<Track> songs,PlayListsongs;
     private LinkedHashMap<Integer,String> PlayListIDs;
+    private List<String>NoInternetPlayList;
 
     private int songPosn;
     private boolean PrepStage=false;
@@ -44,6 +45,7 @@ public class MusicService extends Service {
     private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
     private static final int BUFFER_SEGMENT_COUNT = 256;
     public boolean pause;
+    public boolean noInternet=false;
     public boolean inPlayList;
     MediaCodecAudioTrackRenderer  audioRenderer;
     private int focus;
@@ -74,8 +76,18 @@ public class MusicService extends Service {
                         String songTitle;
 
                         if (inPlayList) {
-                            songTitle = PlayListsongs.get(getSongIndex()).getTitle();
-                            send(PlayListsongs);
+                           if(noInternet)
+                           {
+                               String temp = NoInternetPlayList.get(getSongIndex());
+                               songTitle=filter(temp);
+                               Log.d("MusicService"," this is the titel without internet"+songTitle);
+                               NoInternetSend(NoInternetPlayList);
+                           }
+                            else
+                           {
+                               songTitle = PlayListsongs.get(getSongIndex()).getTitle();
+                               send(PlayListsongs);
+                           }
                         } else {
                             songTitle = songs.get(getSongIndex()).getTitle();
                             send(songs);
@@ -137,9 +149,19 @@ public class MusicService extends Service {
         if (focus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             String url = "";
             if (inPlayList) {
-                Track theSong = PlayListsongs.get(songPosn);
-                url = PlayListIDs.get(theSong.getID());
-                Log.d("musicService","get song path"+url);
+
+                if(noInternet)
+                {
+                 //   Track theSong = PlayListsongs.get(songPosn); extract ID from the
+                    int Id = convert(filter(NoInternetPlayList.get(songPosn)));
+                    url = PlayListIDs.get(Id);
+                    Log.d("musicService","get song path"+url);
+                }
+                else
+                {
+                    Track theSong = PlayListsongs.get(songPosn);
+                    url = PlayListIDs.get(theSong.getID());
+                }
 
             } else {
                 Track theSong = songs.get(songPosn);
@@ -162,6 +184,9 @@ public class MusicService extends Service {
     }
     public void setPlayList(List<Track> theSongs){
         PlayListsongs=theSongs;
+    }
+    public void setNoInternetPlayList(List<String> theSongs){
+        this.NoInternetPlayList = theSongs;
     }
     public void setIDs(LinkedHashMap<Integer,String> IDS){
         this.PlayListIDs=IDS;
@@ -271,6 +296,10 @@ public class MusicService extends Service {
             exoPlayer.setPlayWhenReady(true);
         }
     }
+    public void noInternet(boolean flag){
+        this.noInternet=true;
+
+    }
     public void pausePlayer(){
         exoPlayer.setPlayWhenReady(false);
     }
@@ -278,9 +307,12 @@ public class MusicService extends Service {
         this.pause=Pause_state;
     }
     public int getSongIndex(){
-        return songPosn;
+        return this.songPosn;
     }
     public void ResetPlayer(){ exoPlayer.stop();exoPlayer.seekTo(0);}
+    public boolean NoInterNet(){
+        return noInternet;
+    }
 
 
     public void playNext(){
@@ -309,6 +341,56 @@ public class MusicService extends Service {
         }
 
         LocalBroadcastManager.getInstance(MusicService.this).sendBroadcast(intent);
+    }
+
+    private void NoInternetSend(List<String> songList)
+    {
+        Intent intent = new Intent("Prep");
+        intent.putExtra("PrepState",PrepStage);
+        intent.putExtra("SongIndex",songPosn);
+        intent.putExtra("Title",songList.get(songPosn).substring(0,findbracket(songList.get(songPosn))));
+        intent.putExtra("UserName"," ");
+        intent.putExtra("Art"," ");
+        // send random default artwork here ... the default pic needs to be chosen ....
+        LocalBroadcastManager.getInstance(MusicService.this).sendBroadcast(intent);
+    }
+
+    public String filter(String txt){
+        int mark=0;
+
+        for(int i=txt.length()-1;i>0;i--)
+        {
+            if(txt.charAt(i)=='>' ){
+                mark = i;
+                break;
+            }
+        }
+        int start=mark-1;
+        StringBuilder temp=new StringBuilder();
+        while(txt.charAt(start)!='<')
+        {
+            temp.append(txt.charAt(start));
+            start--;
+        }
+
+        String ID = new StringBuffer(temp).
+                reverse().toString();
+        return ID;
+    }
+    public int findbracket(String txt){
+        int flag=0;
+        for(int i=txt.length()-1;i>0;i--)
+        {
+            if(txt.charAt(i)=='<'){
+                flag=i;
+                break;
+            }
+        }
+        return flag;
+    }
+    public int convert(String s){
+        int foo=Integer.parseInt(s);
+        return foo;
     }
     @Override
     public void onDestroy() {

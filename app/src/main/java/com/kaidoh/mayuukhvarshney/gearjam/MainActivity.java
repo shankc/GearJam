@@ -122,7 +122,14 @@ protected File folder;
                // Track track = mPlayListItems.get(index);
                 mSelectedTrackTitle.setText(title);
                 mArtistTitile.setText(username);
-                Picasso.with(MainActivity.this).load(art).into(mSelectedTrackImage);
+             if(musicSrv.NoInterNet())
+             {
+                 Picasso.with(MainActivity.this).load(R.mipmap.the_default_image).into(mSelectedTrackImage);
+             }
+                else
+             {
+                 Picasso.with(MainActivity.this).load(art).into(mSelectedTrackImage);
+             }
             }
             ToggleSwitch();
             SeekInit();

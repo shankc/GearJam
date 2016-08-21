@@ -85,7 +85,7 @@ public class ImageAdapter extends BaseAdapter {
             cover.setLayoutParams(mImageViewLayoutParams);
         }
         //cover.setImageResource(ICONS[position % ICONS.length]);
-        Picasso.with(mContext).load(ICONS[position%ICONS.length]).into(cover);
+        Picasso.with(mContext).load(ICONS[position]).into(cover);
         title.setText(CONTENT[position % CONTENT.length]);
 
         return view;

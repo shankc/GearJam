@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:id="@+id/gridroot"
-    >
+    android:id="@+id/gridroot">
     <GridView xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/grid_view1"
         style="@style/PhotoGrid"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="100"
         android:background="#151515"
         android:columnWidth="@dimen/photo_size"
         android:horizontalSpacing="@dimen/photo_spacing"

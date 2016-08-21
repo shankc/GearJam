@@ -11,10 +11,10 @@
 
     <FrameLayout
         android:id="@+id/FragmentContainer"
-        android:layout_weight="100"
         android:layout_width="match_parent"
         android:background="@mipmap/space_background"
         android:layout_height="0dp"
+        android:layout_weight="100"
 
         />
     <RelativeLayout

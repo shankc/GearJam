@@ -32,7 +32,8 @@ public class DisplayTrackFragment extends Fragment {
     Map<String, String> Params = new HashMap<>();
     Map<String, Integer> offset = new HashMap<>();
     Map<String,Integer> Duration= new HashMap<>();
-    public List<Track> mPlayListItems, AllSongs;
+    public List<Track> mPlayListItems;
+    public List<String>NoInterNetPlayList;
     protected Set<Track> Song_Set;
     protected SCTrackAdapter mAdapter;
     protected ListView listView;
@@ -53,6 +54,7 @@ RecyclerView main ;
         category = bundle.getString("Genre");
         view = inflater.inflate(R.layout.track_layout, container, false);
         mPlayListItems = new ArrayList<Track>();
+        NoInterNetPlayList = new ArrayList<>();
         Song_Set = new LinkedHashSet<Track>(mPlayListItems);
         //mAdapter = new SCTrackAdapter(getActivity(), mPlayListItems);
 //        listView.setAdapter(mAdapter);

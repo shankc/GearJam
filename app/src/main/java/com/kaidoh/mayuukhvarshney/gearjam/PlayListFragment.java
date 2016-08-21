@@ -33,13 +33,15 @@ public class PlayListFragment extends Fragment {
   ArrayList< LinkedHashMap<String,String> >SongList;
     LinkedHashMap<Integer,String> IDS;
     SCTrackAdapter mAdapter;
+    List<String>NoInterNetPLayList;
     ListView listView;
     protected int tempID;
     protected String tempPath;
     protected int Current_position=0;
-protected File home;
+protected File home,NoInternetSongFile;
     PlayListPass data;
     NewTrackAdapter theAdapter;
+    NoInternetTrackAdapter NoInternetAdapter;
     View view;
     ProgressWheel progress;
     RecyclerView main;
@@ -49,6 +51,7 @@ protected File home;
         view = inflater.inflate(R.layout.track_layout, container, false);
 
         mPlayListItems = new ArrayList<Track>();
+        NoInterNetPLayList= new ArrayList<>();
         SongList = new ArrayList<LinkedHashMap<String, String>>();
         IDS = new LinkedHashMap<>();
       home = new File(getActivity().getFilesDir(),"");
@@ -79,10 +82,11 @@ protected File home;
             protected void onPostExecute(List<Track> array){
                     super.onPostExecute(array);
 
-
                 }
             }.execute();
         }
+
+
 
             return view;
         }
@@ -91,6 +95,7 @@ protected File home;
        Fragment f = getActivity().getSupportFragmentManager().findFragmentById(R.id.FragmentContainer);
         if(f instanceof PlayListFragment){
             theAdapter= new NewTrackAdapter(getActivity(),mPlayListItems,true);
+            theAdapter.setSongPath(IDS);
             Log.d("PlayListFragment "," it is true");
         }
         else
@@ -102,6 +107,16 @@ protected File home;
         theAdapter.notifyDataSetChanged();
 
 
+    }
+    private void setupNoInternetRecylerView(@NonNull RecyclerView recyclerView){
+         Fragment f = getActivity().getSupportFragmentManager().findFragmentById(R.id.FragmentContainer);
+        if(f instanceof PlayListFragment)
+        {
+            NoInternetAdapter = new NoInternetTrackAdapter(getActivity(),NoInterNetPLayList,true);
+            NoInternetAdapter.setSongPath(IDS);
+        }
+        recyclerView.setAdapter(NoInternetAdapter);
+        NoInternetAdapter.notifyDataSetChanged();
     }
     class RetriveFromFolder extends AsyncTask<Void,Void,List<Track>>{
 
@@ -126,7 +141,7 @@ protected File home;
 
                         SongList.add(song);
                         tempID = convert(filter(file.getName()));
-
+                     NoInternetSongFile=file;
                         tempPath = file.getPath();
 
                         IDS.put(tempID, tempPath);
@@ -137,23 +152,44 @@ protected File home;
                             public void success(Track track, Response response) {
                                 mPlayListItems.add(track);
 
-                               data.onPlayListDataPass(SongList, mPlayListItems, IDS);// only works in the success method!
+                             //  data.onPlayListDataPass(SongList, mPlayListItems, IDS);// only works in the success method! // this method is no longer required
                                 ((MainActivity)getActivity()).musicSrv.setPlayList(mPlayListItems);
+                                ((MainActivity)getActivity()).musicSrv.setIDs(IDS);
+                                // send track IDs along with their stored path in the directory.
+                                ((MainActivity)getActivity()).musicSrv.CurrentFragment(true);
+                                main.setVisibility(View.VISIBLE);
+                                progress.stopSpinning();
+                                progress.setVisibility(View.INVISIBLE);
+                                Log.d("PlayLIstFragment ", "the success method called even without internet"); // statement used for offline playing feature only.
+
+                                View recyclerView = view.findViewById(R.id.tracklayout_list);
+                                assert recyclerView != null;
+                                setupRecyclerView((RecyclerView) recyclerView);
+
+
+                            }
+
+                            @Override
+                            public void failure(RetrofitError error) { // when there is no internet connection, send in the IDS and paths and to set default image as avatars.
+                                Log.d("PLayListFragment", "retrofit error ", error);
+                               // Toast.makeText(getActivity(), "Network Error ArtWork couldn't be Loaded :(", Toast.LENGTH_SHORT).show();
+                                ((MainActivity)getActivity()).musicSrv.noInternet(true);
+
+                                NoInterNetPLayList.add(NoInternetSongFile.getName());
+                                Track t = new Track();
+                                t.setTrackTitile(NoInternetSongFile.getName().substring(0,findbracket(NoInternetSongFile.getName())));
+                                mPlayListItems.add(t);
+                                Log.d("PlayLisrFragment","the no internet log, the song title is  "+NoInternetSongFile.getName());
+                                ((MainActivity)getActivity()).musicSrv.setNoInternetPlayList(NoInterNetPLayList);
                                 ((MainActivity)getActivity()).musicSrv.setIDs(IDS);
                                 ((MainActivity)getActivity()).musicSrv.CurrentFragment(true);
                                 main.setVisibility(View.VISIBLE);
                                 progress.stopSpinning();
                                 progress.setVisibility(View.INVISIBLE);
+
                                 View recyclerView = view.findViewById(R.id.tracklayout_list);
                                 assert recyclerView != null;
-                                setupRecyclerView((RecyclerView) recyclerView);
-
-                            }
-
-                            @Override
-                            public void failure(RetrofitError error) {
-                                Log.d("PLayListFragment", "retrofit error ", error);
-                                Toast.makeText(getActivity(), "Network Error ArtWork couldn't be Loaded :(", Toast.LENGTH_SHORT).show();
+                                setupNoInternetRecylerView((RecyclerView) recyclerView);
 
 
                             }
@@ -215,7 +251,7 @@ protected File home;
         int flag=0;
         for(int i=txt.length()-1;i>0;i--)
         {
-            if(txt.charAt(i)=='>'){
+            if(txt.charAt(i)=='<'){
                 flag=i;
                 break;
             }

@@ -2,16 +2,18 @@ package com.kaidoh.mayuukhvarshney.gearjam;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
 /**
  * Created by mayuukhvarshney on 28/05/16.
@@ -19,22 +21,24 @@ import java.util.List;
 public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyViewHolder> {
 
     private List<Track> TheSongs;
+    private LinkedHashMap<Integer,String>SongPath;
+    //private LinkedHashMap<Integer,String> PlayListPaths;
+
     Context mContext;
     Boolean isPlayList=false;
 
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
         public TextView TrackTitle;
-        public ImageView TrackImage;
+        public ImageView TrackImage,DeleteButton;
         private View mView;
-        private CheckBox box;
+
         public MyViewHolder(View view) {
             super(view);
             TrackTitle=(TextView)view.findViewById(R.id.track_title);
-            TrackImage=(ImageView)view.findViewById(R.id.track_image);
             if(isPlayList){
-             box = (CheckBox) view.findViewById(R.id.cbBox);
-            }
+            DeleteButton = (ImageView) view.findViewById(R.id.delete_btn);}
+            TrackImage=(ImageView)view.findViewById(R.id.track_image);
             mView=view;
 
         }
@@ -45,6 +49,7 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
         this.TheSongs = songs;
         this.mContext=context;
         this.isPlayList=result;
+
 
 
     }
@@ -66,16 +71,26 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, final int position) {
-       Track track;
+       Track track=new Track();
         track= TheSongs.get(position);
         holder.TrackTitle.setText(track.getTitle());
-       if(track.getArtworkURL()==null){
-           Picasso.with(mContext).load(track.getUser().getAvatar()).into(holder.TrackImage);
-       }
+        if(isPlayList){
+            // box = (CheckBox) view.findViewById(R.id.cbBox);
+
+            holder.DeleteButton.setVisibility(View.VISIBLE);
+        }
+
+
+
+         if(track.getArtworkURL()==null)
+         {
+             Picasso.with(mContext).load(track.getUser().getAvatar()).into(holder.TrackImage);
+         }
         else
-       {
-           Picasso.with(mContext).load(track.getArtworkURL()).into(holder.TrackImage);
-       }
+         {
+             Picasso.with(mContext).load(track.getArtworkURL()).into(holder.TrackImage);
+         }
+
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -95,7 +110,23 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
 
             }
         });
+   if(isPlayList)
+   {
+       holder.DeleteButton.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View v) {
+               // if successfull need to display an alert dialouge.
+               Track track = TheSongs.get(position);
+                int id = track.getID();
+               File file = new File(SongPath.get(track.getID()));
+               boolean isdelete = file.delete();
+               Log.d("NewTrackAdapter"," has the file been delete on delete button click? "+isdelete);
+               TheSongs.remove(position);
+               notifyItemRemoved(position);
 
+           }
+       });
+   }
         holder.mView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -115,10 +146,20 @@ public class NewTrackAdapter extends RecyclerView.Adapter<NewTrackAdapter.MyView
              return true;
             }
         });
+
     }
 
     @Override
     public int getItemCount() {
         return TheSongs.size();
     }
+
+    public void returnmessage(String path){
+        Log.d("NewTrackAdapter","the delete button was cliked"+path);
+
+
+    }
+  public void setSongPath(LinkedHashMap<Integer,String> paths){
+      this.SongPath=paths;
+  }
 }

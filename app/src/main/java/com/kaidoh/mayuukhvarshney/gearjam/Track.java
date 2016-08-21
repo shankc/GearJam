@@ -27,6 +27,15 @@ public class Track {
     @SerializedName("waveform_url")
     private String mWaveformURL;
 
+    private String TrackTitle;
+
+    public void setTrackTitile(String title){
+        this.TrackTitle=title;
+    }
+    public String getTrackTitle(){
+        return this.TrackTitle;
+    }
+
     public String getTitle() {
         return mTitle;
     }
